@@ -15,12 +15,36 @@ function App() {
     upvote: 0
   });
   const [chat, setChat] = useState([]);
+  const [filteredChat, setFilteredChat] = useState([]);
+  const [topChat, setTopChat] = useState([])
+
+  function filterMessages() {
+    const filteredMessages = chat.filter((message) => message.upvote >= 3);
+    setFilteredChat(filteredMessages);
+  };
+
+  function sortMessagesByUpvotes() {
+    const sortedMessages = [...chat].sort((a, b) => b.upvote - a.upvote);
+    setTopChat(sortedMessages);
+  };
 
   async function upvote(data, s) {
-    if (!user.upVoted) {
-      setUser((prevUser) => ({ ...prevUser, upVoted: true }));
+    if (user.upVoted < 10) {
 
-      await s.emit("upvote", { userId: user.userId });
+      const updatedChat = chat.map((message) => {
+        if (message.messageId === data.messageId) {
+          return { ...message, upvote: message.upvote + 1 };
+        }
+        return message;
+      });
+
+      setChat(updatedChat);
+      setUser((prevUser) => ({ ...prevUser, upVoted: user.upVoted + 1 }));
+
+      filterMessages()
+      sortMessagesByUpvotes()
+
+      await s.emit("send-upvote", chat);
     }
   }
 
@@ -41,8 +65,11 @@ function App() {
         console.log(data);
         setChat((prevChat) => [...prevChat, { ...data, dir: " mr-auto" }]);
       });
+
+
     }
   }, [user]);
+
 
   if (!user.username) {
     return <Register />;
@@ -73,33 +100,41 @@ function App() {
               })}
           </div>
           <div className="bg-gray-100 flex flex-col gap-2 border-2 border-black rounded-lg shadow-md h-[350px] w-[350px] overflow-y-auto">
-            {chat &&
-              chat.map((data, index) => {
+            {filteredChat &&
+              filteredChat.map((data, index) => {
                 return (
                   <div
                     key={index}
                     className={
-                      "bg-orange-700 text-white p-2 text-lg rounded-md w-2/3 mx-2" +
+                      "bg-orange-700 text-white p-2 rounded-md w-2/3 mx-2" +
                       data.dir
                     }
                   >
-                    {data.sender}: {data.message}
+                    <div className="text-lg w-3/4">{data.sender}: {data.message}</div>
+                    <div className="flex gap-2 w-1/4">
+                      <div className="cursor-pointer" onClick={() => upvote(data, socket)}>Up</div>
+                      <div className="">{data.upvote}</div>
+                    </div>
                   </div>
                 );
               })}
           </div>
           <div className="bg-gray-100 flex flex-col gap-2 border-2 border-black rounded-lg shadow-md h-[350px] w-[350px] overflow-y-auto">
-            {chat &&
-              chat.map((data, index) => {
+            {topChat &&
+              topChat.map((data, index) => {
                 return (
                   <div
                     key={index}
                     className={
-                      "bg-orange-700 text-white p-2 text-lg rounded-md w-2/3 mx-2" +
+                      "bg-orange-700 text-white p-2 rounded-md w-2/3 mx-2" +
                       data.dir
                     }
                   >
-                    {data.sender}: {data.message}
+                    <div className="text-lg w-3/4">{data.sender}: {data.message}</div>
+                    <div className="flex gap-2 w-1/4">
+                      <div className="cursor-pointer" onClick={() => upvote(data, socket)}>Up</div>
+                      <div className="">{data.upvote}</div>
+                    </div>
                   </div>
                 );
               })}

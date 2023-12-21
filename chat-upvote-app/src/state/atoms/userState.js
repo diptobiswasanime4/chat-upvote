@@ -7,6 +7,6 @@ export const userState = atom({
         userId: "",
         socketId: "",
         roomId: "",
-        upVoted: false,
+        upVoted: 0,
     },
 });
